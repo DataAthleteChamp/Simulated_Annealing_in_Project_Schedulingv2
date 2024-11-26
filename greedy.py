@@ -6,14 +6,27 @@ from datetime import datetime
 import traceback
 from typing import List, Dict, Tuple
 import time
-
+import logging
 
 class GreedyScheduler:
     def __init__(self, dataset_path: str):
-        """Initialize the Greedy scheduler with dataset"""
+        """Initialize the Greedy scheduler with dataset and logging"""
+        self._setup_logging()
         self._load_dataset(dataset_path)
         self._initialize_tracking()
         self._create_output_directories()
+
+    def _setup_logging(self):
+        """Setup detailed logging configuration"""
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler('greedy_scheduler.log'),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger('GreedyScheduler')
 
     def _load_dataset(self, dataset_path: str):
         """Load and validate the dataset"""
@@ -129,95 +142,215 @@ class GreedyScheduler:
 
         return end_time
 
+    def _find_earliest_start_time(self, task_id: int, scheduled_tasks: List[Dict]) -> int:
+        """Find the earliest possible start time for a task considering all constraints"""
+        earliest_time = 0
+        task = self.tasks[task_id]
+
+        # Consider precedence constraints
+        for i in range(self.num_tasks):
+            if task_id in self.tasks[i].get('successors', []):
+                for scheduled in scheduled_tasks:
+                    if scheduled['task_id'] == i:
+                        earliest_time = max(earliest_time, int(scheduled['end_time']))
+
+        # Build resource profile up to current point
+        resource_usage = {}
+        for scheduled in scheduled_tasks:
+            start = int(scheduled['start_time'])
+            end = int(scheduled['end_time'])
+            for t in range(start, end):
+                if t not in resource_usage:
+                    resource_usage[t] = {r: 0 for r in self.global_resources}
+                for resource, amount in self.tasks[scheduled['task_id']]['resource_requirements'].items():
+                    resource_usage[t][resource] += amount
+
+        # Find earliest time with available resources
+        current_time = int(earliest_time)
+        while True:
+            can_start = True
+            end_time = current_time + int(task['processing_time'])
+
+            for t in range(current_time, end_time):
+                if t not in resource_usage:
+                    resource_usage[t] = {r: 0 for r in self.global_resources}
+
+                for resource, amount in task['resource_requirements'].items():
+                    if (resource_usage[t][resource] + amount >
+                            self.global_resources[resource]):
+                        can_start = False
+                        break
+
+            if can_start:
+                return current_time
+            current_time += 1
+
+    def _validate_schedule(self, schedule: List[Dict]) -> Tuple[bool, Dict]:
+        """Comprehensive schedule validation"""
+        violations = {
+            'precedence': [],
+            'resource': [],
+            'timing': []
+        }
+
+        # Create task position mapping
+        task_times = {
+            task['task_id']: (task['start_time'], task['end_time'])
+            for task in schedule
+        }
+
+        # Check precedence constraints
+        for task in schedule:
+            task_id = task['task_id']
+            task_end = task['end_time']
+
+            for succ in self.tasks[task_id].get('successors', []):
+                # Only check if successor has been scheduled
+                if succ in task_times:
+                    succ_start = task_times[succ][0]
+                    if succ_start < task_end:
+                        violations['precedence'].append(
+                            f"Task {task_id} ends at {task_end} but successor {succ} starts at {succ_start}"
+                        )
+
+        # Check resource constraints
+        resource_usage = {}
+        for task in schedule:
+            task_id = task['task_id']
+            start_time = int(task['start_time'])
+            end_time = int(task['end_time'])
+
+            for t in range(start_time, end_time):
+                if t not in resource_usage:
+                    resource_usage[t] = {r: 0 for r in self.global_resources}
+
+                for resource, amount in self.tasks[task_id]['resource_requirements'].items():
+                    resource_usage[t][resource] += amount
+                    if resource_usage[t][resource] > self.global_resources[resource]:
+                        violations['resource'].append(
+                            f"Time {t}: Resource {resource} overused "
+                            f"({resource_usage[t][resource]} > {self.global_resources[resource]})"
+                        )
+
+        # Check timing consistency
+        for task in schedule:
+            if task['end_time'] - task['start_time'] != task['processing_time']:
+                violations['timing'].append(
+                    f"Task {task['task_id']} duration mismatch: "
+                    f"scheduled {task['end_time'] - task['start_time']} != "
+                    f"required {task['processing_time']}"
+                )
+
+        # Determine if schedule is valid
+        is_valid = all(len(v) == 0 for v in violations.values())
+
+        return is_valid, violations
+
+    def _prepare_error_results(self) -> Dict:
+        """Prepare error results with complete structure"""
+        execution_time = time.time() - self.start_time if self.start_time else 0
+
+        return {
+            'performance_metrics': {
+                'makespan': float('inf'),
+                'execution_time': float(execution_time),
+                'steps': len(self.step_history) if hasattr(self, 'step_history') else 0,
+                'violations': {'precedence': 0, 'resource': 0}
+            },
+            'schedule': [],
+            'step_history': [],
+            'solution_quality': {
+                'resource_utilization': 0.0,
+                'critical_path_ratio': float('inf')
+            },
+            'error': 'Optimization failed'
+        }
+
     def optimize(self) -> Dict:
-        """Execute greedy optimization algorithm"""
-        print("\nStarting greedy optimization...")
+        """Execute greedy optimization algorithm with validation"""
+        self.logger.info("Starting greedy optimization...")
         self.start_time = time.time()
 
         try:
             scheduled_tasks = []
-            resource_usage = {}
-            task_timings = {}
             current_time = 0
 
             while len(scheduled_tasks) < self.num_tasks:
-                eligible_tasks = self._get_eligible_tasks(scheduled_tasks)
+                eligible_tasks = self._get_eligible_tasks([t['task_id'] for t in scheduled_tasks])
 
                 if not eligible_tasks:
+                    self.logger.warning("No eligible tasks found")
                     break
 
-                # Calculate priorities for eligible tasks
-                task_priorities = [
-                    (task_id, self._calculate_task_priority(task_id, eligible_tasks))
-                    for task_id in eligible_tasks
-                ]
+                # Calculate priorities and earliest possible start times
+                task_priorities = []
+                for task_id in eligible_tasks:
+                    earliest_start = self._find_earliest_start_time(task_id, scheduled_tasks)
+                    priority_score = self._calculate_task_priority(task_id, eligible_tasks)
+                    task_priorities.append((task_id, priority_score, earliest_start))
 
-                # Sort by priority (lower score = higher priority)
-                task_priorities.sort(key=lambda x: x[1])
+                # Sort by priority and earliest start time
+                task_priorities.sort(key=lambda x: (x[1], x[2]))
 
-                # Try to schedule highest priority task
-                scheduled = False
-                for task_id, _ in task_priorities:
-                    if self._is_resource_available(task_id, current_time, resource_usage):
-                        end_time = self._schedule_task(task_id, current_time, resource_usage)
-                        task_timings[task_id] = {
-                            'start': current_time,
-                            'end': end_time
-                        }
-                        scheduled_tasks.append(task_id)
-                        self.step_history.append({
-                            'step': len(scheduled_tasks),
-                            'task': task_id,
-                            'start_time': current_time,
-                            'end_time': end_time
-                        })
-                        scheduled = True
-                        break
+                # Schedule highest priority task
+                task_id = task_priorities[0][0]
+                start_time = task_priorities[0][2]
 
-                if not scheduled:
-                    current_time += 1
-
-            # Convert results to final schedule format
-            final_schedule = []
-            for task_id in scheduled_tasks:
-                timing = task_timings[task_id]
-                final_schedule.append({
+                task = {
                     'task_id': task_id,
-                    'start_time': float(timing['start']),
-                    'end_time': float(timing['end']),
+                    'start_time': float(start_time),
+                    'end_time': float(start_time + self.tasks[task_id]['processing_time']),
                     'processing_time': float(self.tasks[task_id]['processing_time'])
-                })
+                }
 
-            makespan = max(task['end_time'] for task in final_schedule)
+                scheduled_tasks.append(task)
+                self.logger.debug(f"Scheduled task {task_id} at time {start_time}")
+
+                # Validate current partial schedule
+                is_valid, violations = self._validate_schedule(scheduled_tasks)
+                if not is_valid:
+                    self.logger.error("Schedule validation failed:")
+                    for category, issues in violations.items():
+                        for issue in issues:
+                            self.logger.error(f"{category}: {issue}")
+
+                current_time = max(current_time, int(task['end_time']))
+
+            if len(scheduled_tasks) < self.num_tasks:
+                self.logger.error("Failed to schedule all tasks")
+                return self._prepare_error_results()
+
+            # Final schedule validation
+            is_valid, violations = self._validate_schedule(scheduled_tasks)
+            if not is_valid:
+                self.logger.error("Final schedule validation failed")
+                return self._prepare_error_results()
+
+            makespan = max(task['end_time'] for task in scheduled_tasks)
             execution_time = time.time() - self.start_time
 
             results = {
                 'performance_metrics': {
                     'makespan': float(makespan),
                     'execution_time': float(execution_time),
-                    'steps': len(self.step_history),
-                    'violations': self.current_violations
+                    'steps': len(scheduled_tasks),
+                    'violations': {'precedence': 0, 'resource': 0}
                 },
-                'schedule': final_schedule,
-                'step_history': self.step_history,
+                'schedule': scheduled_tasks,
                 'solution_quality': {
-                    'resource_utilization': self._calculate_resource_utilization(final_schedule),
-                    'critical_path_ratio': self._calculate_critical_path_ratio(final_schedule)
+                    'resource_utilization': self._calculate_resource_utilization(scheduled_tasks),
+                    'critical_path_ratio': self._calculate_critical_path_ratio(scheduled_tasks)
                 }
             }
 
-            print("\nOptimization Complete:")
-            print(f"Final makespan: {makespan:.2f}")
-            print(f"Total steps: {len(self.step_history)}")
-            print(f"Execution time: {execution_time:.2f} seconds")
-
+            self.logger.info(f"Optimization complete. Makespan: {makespan}")
             self._save_report(results)
             self.create_visualizations(results)
 
             return results
 
         except Exception as e:
-            print(f"Error during optimization: {str(e)}")
+            self.logger.error(f"Error during optimization: {str(e)}")
             traceback.print_exc()
             return self._prepare_error_results()
 
@@ -321,17 +454,18 @@ class GreedyScheduler:
         }
 
     def create_visualizations(self, results: Dict):
-        """Generate all visualizations"""
+        """Generate enhanced visualizations"""
         try:
-            import matplotlib.pyplot as plt
-
+            # Create resource profile visualization
+            self._plot_resource_profile(results['schedule'], plt)
             self._plot_schedule(results['schedule'], plt)
             self._plot_resource_utilization(results['schedule'], plt)
-            self._plot_step_progression(results['step_history'], plt)
-            print(f"Visualizations saved in: {self.viz_dir}")
+            #self._plot_step_progression(results['step_history'], plt)
+
+            self.logger.info("Visualizations created successfully")
+            self.logger.info(f"Visualizations saved in: {self.viz_dir}")
         except Exception as e:
-            print(f"Error creating visualizations: {str(e)}")
-            traceback.print_exc()
+            self.logger.error(f"Error creating visualizations: {str(e)}")
 
     def _plot_schedule(self, schedule: List[Dict], plt):
         """Create Gantt chart of the schedule"""
@@ -363,6 +497,42 @@ class GreedyScheduler:
 
         plt.tight_layout()
         plt.savefig(os.path.join(self.viz_dir, 'schedule.png'), bbox_inches='tight')
+        plt.close()
+
+    def _plot_resource_profile(self, schedule: List[Dict], plt):
+        """Create detailed resource usage profile"""
+        makespan = max(task['end_time'] for task in schedule)
+        timeline = {t: {r: 0 for r in self.global_resources}
+                    for t in range(int(makespan) + 1)}
+
+        # Build resource usage profile
+        for task in schedule:
+            task_id = task['task_id']
+            start = int(task['start_time'])
+            end = int(task['end_time'])
+
+            for t in range(start, end):
+                for resource, amount in self.tasks[task_id]['resource_requirements'].items():
+                    timeline[t][resource] += amount
+
+        plt.figure(figsize=(15, 10))
+        times = list(range(int(makespan) + 1))
+
+        for i, (resource, capacity) in enumerate(self.global_resources.items()):
+            plt.subplot(len(self.global_resources), 1, i + 1)
+            usage = [timeline[t][resource] for t in times]
+            plt.plot(times, usage, 'b-', label=f'{resource} Usage')
+            plt.axhline(y=capacity, color='r', linestyle='--',
+                        label=f'{resource} Capacity')
+            plt.fill_between(times, usage, alpha=0.3)
+            plt.title(f'Resource {resource} Profile')
+            plt.xlabel('Time')
+            plt.ylabel('Usage')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.viz_dir, 'resource_profile.png'))
         plt.close()
 
     def _plot_resource_utilization(self, schedule: List[Dict], plt):
@@ -418,10 +588,9 @@ class GreedyScheduler:
         plt.savefig(os.path.join(self.viz_dir, 'step_progression.png'))
         plt.close()
 
+
 def main():
-    """Main execution function"""
     try:
-        # Choose dataset size (30, 60, 90, or 120)
         dataset_size = "60"
         json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
@@ -432,35 +601,21 @@ def main():
         dataset_path = os.path.join(json_dir, json_files[0])
         print(f"Using dataset: {dataset_path}")
 
-        # Initialize and run the greedy scheduler
         scheduler = GreedyScheduler(dataset_path)
         results = scheduler.optimize()
 
-        # Print detailed results
         print("\nDetailed Results:")
         print(f"Makespan: {results['performance_metrics']['makespan']:.2f}")
         print(f"Execution Time: {results['performance_metrics']['execution_time']:.2f} seconds")
         print(f"Steps Taken: {results['performance_metrics']['steps']}")
-        print(f"Resource Utilization: {results['solution_quality']['resource_utilization']:.2%}")
-        print(f"Critical Path Ratio: {results['solution_quality']['critical_path_ratio']:.2f}")
+        if 'error' not in results:
+            print(f"Resource Utilization: {results['solution_quality']['resource_utilization']:.2%}")
+            print(f"Critical Path Ratio: {results['solution_quality']['critical_path_ratio']:.2f}")
         print(f"Precedence Violations: {results['performance_metrics']['violations']['precedence']}")
         print(f"Resource Violations: {results['performance_metrics']['violations']['resource']}")
-        print(f"\nResults and visualizations saved in: {scheduler.output_dir}")
 
-        # Print additional solution insights
-        print("\nSolution Insights:")
-        if results['solution_quality']['critical_path_ratio'] > 1.5:
-            print("- Schedule length significantly exceeds critical path length")
-            print("- Consider improving resource allocation strategy")
-
-        if results['solution_quality']['resource_utilization'] < 0.5:
-            print("- Low resource utilization detected")
-            print("- Potential for schedule optimization")
-
-        print("\nVisualization files generated:")
-        print("- Gantt chart (schedule.png)")
-        print("- Resource utilization over time (resource_utilization.png)")
-        print("- Build-up progress (step_progression.png)")
+        if 'error' in results:
+            print(f"Error: {results['error']}")
 
     except Exception as e:
         print(f"Error in main execution: {str(e)}")
