@@ -12,6 +12,7 @@ processed_data/
 sa_results_*/
 optimal_results_*/
 ga_results_*/
+greedy_results_*/
 
 # Ignore Python cache
 __pycache__/
