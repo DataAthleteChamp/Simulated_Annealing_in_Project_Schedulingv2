@@ -1,0 +1,17 @@
+# Ignore Pycharm-specific files
+.idea/
+*.iml
+
+# Ignore virtual environment
+.venv/
+
+# Ignore result directories and temporary files
+data/
+processed_data/
+sa_results_*/
+optimal_results_*/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
