@@ -226,7 +226,6 @@ class OptimalScheduler:
         with open(report_path, 'w') as f:
             json.dump(results, f, indent=2)
 
-
 def main():
     # Choose dataset size (30, 60, 90, or 120)
     dataset_size = "60"

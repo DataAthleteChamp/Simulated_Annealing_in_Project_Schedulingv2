@@ -5,7 +5,6 @@ import networkx as nx
 import numpy as np
 from typing import Dict, List
 
-
 class RCPSPDatasetVisualizer:
     def __init__(self, json_dir: str, output_dir: str):
         """Initialize visualizer"""

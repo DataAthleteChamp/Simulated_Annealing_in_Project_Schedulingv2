@@ -5,6 +5,7 @@
 # Ignore virtual environment
 .venv/
 
+
 # Ignore result directories and temporary files
 data/
 processed_data/

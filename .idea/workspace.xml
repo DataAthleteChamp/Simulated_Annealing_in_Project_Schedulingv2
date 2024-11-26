@@ -5,15 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="57b97c9c-b617-4a16-bea3-175ff2fd19c4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Praca_inzynierskav2.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dataset_visualizer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/optimal_solver.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/rcpsp_parser.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/simulated_annealing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,6 +26,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "DataAthleteChamp"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "git@github.com:DataAthleteChamp/Simulated_Annealing_in_Project_Schedulingv2.git",
+    "accountId": "9b62334e-505d-433d-8510-c30a7a3e490c"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -211,7 +215,7 @@
       <option name="presentableId" value="Default" />
       <updated>1732525893137</updated>
       <workItem from="1732525930085" duration="14656000" />
-      <workItem from="1732609311704" duration="3169000" />
+      <workItem from="1732609311704" duration="4313000" />
     </task>
     <servers />
   </component>

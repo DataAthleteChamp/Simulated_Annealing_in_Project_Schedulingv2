@@ -2,7 +2,6 @@ import os
 from typing import Dict, List
 import json
 
-
 class RCPSPParser:
     def __init__(self, file_path: str):
         self.file_path = file_path
