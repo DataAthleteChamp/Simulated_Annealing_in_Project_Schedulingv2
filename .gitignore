@@ -1,7 +1,7 @@
 # Ignore Pycharm-specific files
 .idea/
 *.iml
-
+.idea/workspace.xml
 # Ignore virtual environment
 .venv/
 
