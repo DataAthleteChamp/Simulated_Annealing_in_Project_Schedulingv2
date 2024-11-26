@@ -13,6 +13,8 @@ sa_results_*/
 optimal_results_*/
 ga_results_*/
 greedy_results_*/
+greedy_scheduler.log
+
 
 # Ignore Python cache
 __pycache__/

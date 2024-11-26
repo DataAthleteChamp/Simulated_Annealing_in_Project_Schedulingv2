@@ -454,86 +454,140 @@ class GreedyScheduler:
         }
 
     def create_visualizations(self, results: Dict):
-        """Generate enhanced visualizations"""
+        """Generate enhanced visualizations with error handling"""
         try:
-            # Create resource profile visualization
-            self._plot_resource_profile(results['schedule'], plt)
+            import matplotlib.pyplot as plt
+
+            # Create individual visualizations
             self._plot_schedule(results['schedule'], plt)
             self._plot_resource_utilization(results['schedule'], plt)
-            #self._plot_step_progression(results['step_history'], plt)
+            self._plot_resource_profile(results['schedule'], plt)
+            self._plot_task_distribution(results['schedule'], plt)
 
-            self.logger.info("Visualizations created successfully")
             self.logger.info(f"Visualizations saved in: {self.viz_dir}")
         except Exception as e:
             self.logger.error(f"Error creating visualizations: {str(e)}")
+            traceback.print_exc()
 
-    def _plot_schedule(self, schedule: List[Dict], plt):
-        """Create Gantt chart of the schedule"""
+    def _plot_task_distribution(self, schedule: List[Dict], plt):
+        """Plot task distribution over time"""
         plt.figure(figsize=(15, 8))
 
+        # Extract task durations and start times
+        durations = [task['end_time'] - task['start_time'] for task in schedule]
+        start_times = [task['start_time'] for task in schedule]
+
+        # Create histogram of task durations
+        plt.subplot(2, 1, 1)
+        plt.hist(durations, bins=20, color='skyblue', alpha=0.7)
+        plt.title('Distribution of Task Durations')
+        plt.xlabel('Duration')
+        plt.ylabel('Number of Tasks')
+        plt.grid(True, alpha=0.3)
+
+        # Create histogram of start times
+        plt.subplot(2, 1, 2)
+        plt.hist(start_times, bins=20, color='lightgreen', alpha=0.7)
+        plt.title('Distribution of Task Start Times')
+        plt.xlabel('Start Time')
+        plt.ylabel('Number of Tasks')
+        plt.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.viz_dir, 'task_distribution.png'))
+        plt.close()
+
+    def _plot_schedule(self, schedule: List[Dict], plt):
+        """Create enhanced Gantt chart of the schedule"""
+        plt.figure(figsize=(20, 10))
+
+        # Create color map for resources
         colors = plt.cm.viridis(np.linspace(0, 1, len(self.global_resources)))
         resource_colors = dict(zip(self.global_resources.keys(), colors))
 
+        # Plot tasks
         for task in schedule:
             task_id = task['task_id']
+
+            # Determine main resource used by task
             resource_usage = self.tasks[task_id]['resource_requirements']
             main_resource = max(resource_usage.items(), key=lambda x: x[1])[0]
 
-            plt.barh(y=task_id,
-                     width=task['processing_time'],
-                     left=task['start_time'],
-                     color=resource_colors[main_resource],
-                     alpha=0.6)
+            # Calculate task properties
+            start = task['start_time']
+            duration = task['end_time'] - start
 
-        legend_patches = [plt.Rectangle((0, 0), 1, 1, fc=color, alpha=0.6)
-                          for color in resource_colors.values()]
-        plt.legend(legend_patches, list(self.global_resources.keys()),
-                   title='Main Resource', loc='center left', bbox_to_anchor=(1, 0.5))
+            # Plot task bar
+            plt.barh(y=task_id, width=duration, left=start,
+                     color=resource_colors[main_resource], alpha=0.6)
 
-        plt.title('Schedule (Gantt Chart)')
+            # Add task label
+            plt.text(start + duration / 2, task_id, f"Task {task_id}",
+                     ha='center', va='center')
+
+        # Customize plot
+        plt.title('Project Schedule (Gantt Chart)')
         plt.xlabel('Time')
         plt.ylabel('Task ID')
         plt.grid(True, alpha=0.3)
 
+        # Add resource legend
+        legend_patches = [plt.Rectangle((0, 0), 1, 1, fc=color, alpha=0.6)
+                          for color in resource_colors.values()]
+        plt.legend(legend_patches, list(self.global_resources.keys()),
+                   title='Main Resource', loc='center left',
+                   bbox_to_anchor=(1, 0.5))
+
         plt.tight_layout()
-        plt.savefig(os.path.join(self.viz_dir, 'schedule.png'), bbox_inches='tight')
+        plt.savefig(os.path.join(self.viz_dir, 'schedule.png'),
+                    bbox_inches='tight', dpi=300)
         plt.close()
 
     def _plot_resource_profile(self, schedule: List[Dict], plt):
         """Create detailed resource usage profile"""
         makespan = max(task['end_time'] for task in schedule)
-        timeline = {t: {r: 0 for r in self.global_resources}
-                    for t in range(int(makespan) + 1)}
-
-        # Build resource usage profile
-        for task in schedule:
-            task_id = task['task_id']
-            start = int(task['start_time'])
-            end = int(task['end_time'])
-
-            for t in range(start, end):
-                for resource, amount in self.tasks[task_id]['resource_requirements'].items():
-                    timeline[t][resource] += amount
 
         plt.figure(figsize=(15, 10))
-        times = list(range(int(makespan) + 1))
+        num_resources = len(self.global_resources)
 
-        for i, (resource, capacity) in enumerate(self.global_resources.items()):
-            plt.subplot(len(self.global_resources), 1, i + 1)
-            usage = [timeline[t][resource] for t in times]
-            plt.plot(times, usage, 'b-', label=f'{resource} Usage')
+        for i, (resource, capacity) in enumerate(self.global_resources.items(), 1):
+            plt.subplot(num_resources, 1, i)
+            times = list(range(int(makespan) + 1))
+            usage = self._calculate_resource_usage_over_time(schedule, resource, times)
+
+            plt.plot(times, usage, 'b-', label='Usage', alpha=0.7)
             plt.axhline(y=capacity, color='r', linestyle='--',
-                        label=f'{resource} Capacity')
+                        alpha=0.5, label='Capacity')
+
             plt.fill_between(times, usage, alpha=0.3)
-            plt.title(f'Resource {resource} Profile')
+            utilization = sum(usage) / (len(times) * capacity) if capacity > 0 else 0
+
+            plt.title(f'Resource {resource} Profile (Avg Utilization: {utilization:.1%})')
             plt.xlabel('Time')
             plt.ylabel('Usage')
             plt.legend()
             plt.grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(self.viz_dir, 'resource_profile.png'))
+        plt.savefig(os.path.join(self.viz_dir, 'resource_profiles.png'))
         plt.close()
+
+    def _calculate_resource_usage_over_time(self, schedule: List[Dict],
+                                            resource: str, times: List[int]) -> List[float]:
+        """Calculate resource usage over time"""
+        usage = [0] * len(times)
+
+        for task in schedule:
+            task_id = task['task_id']
+            start = int(task['start_time'])
+            end = int(task['end_time'])
+            amount = self.tasks[task_id]['resource_requirements'][resource]
+
+            for t in range(start, end):
+                if t < len(usage):
+                    usage[t] += amount
+
+        return usage
 
     def _plot_resource_utilization(self, schedule: List[Dict], plt):
         """Plot resource utilization over time"""
