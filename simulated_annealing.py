@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import json
 import random
@@ -7,7 +6,8 @@ from typing import List, Dict, Tuple
 import os
 from datetime import datetime
 import traceback
-import viridis
+import numpy as np
+from adaptive_temperature_scheduler import AdaptiveTemperatureScheduler
 
 class SimulatedAnnealingScheduler:
     def __init__(self, dataset_path: str):
@@ -26,20 +26,20 @@ class SimulatedAnnealingScheduler:
             # Simplified parameters based on problem size
             if self.num_tasks < 31:  # j30
                 base_temp = 1000
-                base_iterations = 3000
-                cooling_rate = 0.97
+                base_iterations = 2000
+                cooling_rate = 0.96
             elif self.num_tasks < 61:  # j60
                 base_temp = 2000
-                base_iterations = 4000
+                base_iterations = 3000
                 cooling_rate = 0.96
             elif self.num_tasks < 91:  # j90
                 base_temp = 3000
-                base_iterations = 5000
-                cooling_rate = 0.95
+                base_iterations = 3500
+                cooling_rate = 0.97
             else:  # j120
                 base_temp = 4000
-                base_iterations = 6000
-                cooling_rate = 0.94
+                base_iterations = 4000
+                cooling_rate = 0.97
 
             # Adjust based on complexity
             complexity_factor = 1 + resource_complexity
@@ -49,7 +49,9 @@ class SimulatedAnnealingScheduler:
             min_temp = initial_temp * 0.01
 
             # Dynamic neighborhood size
-            neighbors_per_temp = max(5, min(15, self.num_tasks // 3))
+            #neighbors_per_temp = max(3, min(10, self.num_tasks // 5))
+            neighbors_per_temp = max(5, min(10, self.num_tasks // 10))
+            #neighbors_per_temp = max(5, min(15, self.num_tasks // 3))
 
             # Early stopping parameters
             no_improve_limit = max(100, self.num_tasks * 2)
@@ -101,8 +103,7 @@ class SimulatedAnnealingScheduler:
             for k in range(self.num_tasks):
                 for i in range(self.num_tasks):
                     for j in range(self.num_tasks):
-                        tc_matrix[i][j] = min(1, tc_matrix[i][j] +
-                                              tc_matrix[i][k] * tc_matrix[k][j])
+                        tc_matrix[i][j] = min(1, tc_matrix[i][j] + tc_matrix[i][k] * tc_matrix[k][j])
 
             edges = np.sum(tc_matrix)
             return edges / potential_edges if potential_edges > 0 else 0
@@ -180,7 +181,7 @@ class SimulatedAnnealingScheduler:
                 neighbor = schedule.copy()
 
                 # Adaptive move selection based on temperature
-                if temperature > self.initial_temp * 0.7:
+                if temperature > self.initial_temperature * 0.7:
                     # Higher temperature: more aggressive moves
                     moves = ['block_swap', 'block_reverse', 'multiple_swap']
                     weights = [0.4, 0.4, 0.2]
@@ -451,19 +452,18 @@ class SimulatedAnnealingScheduler:
         self.params = self._tune_parameters()
 
         # Set individual parameters for easy access
-        self.initial_temp = self.params['initial_temperature']
-        self.min_temp = self.params['min_temperature']
+        self.initial_temperature = self.params['initial_temperature']  # Keep consistent with params
+        self.min_temperature = self.params['min_temperature']  # Keep consistent with params
         self.cooling_rate = self.params['cooling_rate']
         self.max_iterations = self.params['max_iterations']
         self.neighbors_per_temp = self.params['neighbors_per_temp']
 
-        # Print tuned parameters
-        print("\nInitialized Parameters:")
-        print(f"Initial Temperature: {self.initial_temp:.2f}")
-        print(f"Cooling Rate: {self.cooling_rate:.4f}")
-        print(f"Max Iterations: {self.max_iterations}")
-        print(f"Min Temperature: {self.min_temp:.2f}")
-        print(f"Neighbors per Temperature: {self.neighbors_per_temp}")
+        # Initialize adaptive temperature scheduler
+        self.temp_scheduler = AdaptiveTemperatureScheduler(
+            initial_temp=self.initial_temperature,  # Match the parameter name
+            min_temp=self.min_temperature,  # Match the parameter name
+            target_acceptance_rate=0.3
+        )
 
         # Initialize tracking variables
         self.best_schedule = None
@@ -476,6 +476,14 @@ class SimulatedAnnealingScheduler:
         self.best_solutions = []
         self.acceptance_history = []
         self.diversity_metric = []
+
+        # Print tuned parameters
+        print("\nInitialized Parameters:")
+        print(f"Initial Temperature: {self.initial_temperature:.2f}")
+        print(f"Cooling Rate: {self.cooling_rate:.4f}")
+        print(f"Max Iterations: {self.max_iterations}")
+        print(f"Min Temperature: {self.min_temperature:.2f}")
+        print(f"Neighbors per Temperature: {self.neighbors_per_temp}")
 
     def _prepare_results(self, final_schedule: List[Dict]) -> Dict:
         """Prepare results without stage-related metrics"""
@@ -495,8 +503,8 @@ class SimulatedAnnealingScheduler:
             },
             'schedule': final_schedule,
             'algorithm_parameters': {
-                'initial_temperature': float(self.initial_temp),
-                'final_temperature': float(self.min_temp),
+                'initial_temperature': float(self.initial_temperature),  # Match parameter name
+                'final_temperature': float(self.min_temperature),  # Match parameter name
                 'cooling_rate': float(self.cooling_rate),
                 'max_iterations': int(self.max_iterations)
             },
@@ -524,8 +532,8 @@ class SimulatedAnnealingScheduler:
             },
             'schedule': [],
             'algorithm_parameters': {
-                'initial_temperature': float(self.initial_temp),
-                'final_temperature': float(self.min_temp),
+                'initial_temperature': float(self.initial_temperature),  # Match parameter name
+                'final_temperature': float(self.min_temperature),  # Match parameter name
                 'cooling_rate': float(self.cooling_rate),
                 'max_iterations': int(self.max_iterations)
             },
@@ -539,7 +547,7 @@ class SimulatedAnnealingScheduler:
         }
 
     def optimize(self) -> Dict:
-        """Single-stage optimization with early stopping"""
+        """Single-stage optimization with adaptive temperature scheduling."""
         print("\nStarting optimization process...")
         self.start_time = time.time()
 
@@ -556,22 +564,20 @@ class SimulatedAnnealingScheduler:
 
             print(f"Initial solution makespan: {current_cost:.2f}")
 
-            temperature = self.initial_temp
             iterations = 0
             iterations_without_improvement = 0
             total_improvements = 0
             critical_path_length = self._calculate_critical_path_length()
 
             # Main optimization loop
-            while (temperature > self.min_temp and
-                   iterations < self.max_iterations and
+            while (iterations < self.max_iterations and
                    iterations_without_improvement < self.params['no_improve_limit']):
 
                 improved_in_temp = False
 
                 # Try multiple neighbors at each temperature
                 for _ in range(self.neighbors_per_temp):
-                    neighbor = self._generate_neighbor(current_schedule, temperature)
+                    neighbor = self._generate_neighbor(current_schedule, self.temp_scheduler.current_temp)
                     neighbor_cost = self._calculate_cost(neighbor)[0]
 
                     # Calculate acceptance probability
@@ -585,33 +591,46 @@ class SimulatedAnnealingScheduler:
                             self.best_schedule = neighbor.copy()
                             self.best_cost = neighbor_cost
                             print(f"New best solution: {self.best_cost:.2f}")
-
-                            # If solution is exceptionally good, cool faster
-                            if self.best_cost < critical_path_length * 1.1:
-                                temperature *= self.cooling_rate
                     else:
                         delta = (neighbor_cost - current_cost) / current_cost
-                        acceptance_prob = np.exp(-delta / temperature)
+                        acceptance_prob = np.exp(-delta / self.temp_scheduler.current_temp)
 
-                    if random.random() < acceptance_prob:
+                    # Determine if neighbor is accepted
+                    accepted = random.random() < acceptance_prob
+                    if accepted:
                         current_schedule = neighbor
                         current_cost = neighbor_cost
 
-                    # Update tracking
-                    self._update_tracking(current_cost, temperature, acceptance_prob)
+                    # Update temperature using adaptive scheduler
+                    self.temp_scheduler.get_next_temperature(
+                        current_cost=current_cost,
+                        best_cost=self.best_cost,
+                        iteration=iterations,
+                        was_accepted=accepted
+                    )
+
+                    # Update tracking metrics
+                    self._update_tracking(current_cost, self.temp_scheduler.current_temp, acceptance_prob)
 
                 if not improved_in_temp:
                     iterations_without_improvement += 1
 
-                # Progress reporting every 100 iterations
-                if iterations % 100 == 0:
-                    print(f"\nProgress:")
-                    print(f"Temperature: {temperature:.2f}")
-                    print(f"Current best: {self.best_cost:.2f}")
-                    print(f"Iterations without improvement: {iterations_without_improvement}")
-                    print(f"Total improvements: {total_improvements}")
+                    # Lower the minimum temperature if no improvement for too long
+                    if iterations_without_improvement > self.temp_scheduler.window_size:
+                        self.temp_scheduler.min_temp *= 0.9
+                        print(f"Reducing minimum temperature to {self.temp_scheduler.min_temp:.2f} due to stagnation.")
 
-                temperature *= self.cooling_rate
+                # Progress reporting every 100 iterations
+                # if iterations % 100 == 0:
+                #     stats = self.temp_scheduler.get_statistics()
+                #     print(f"\nProgress:")
+                #     print(f"Temperature: {stats['current_temperature']:.2f}")
+                #     print(f"Cooling Rate: {stats['cooling_rate']:.4f}")
+                #     print(f"Acceptance Rate: {stats['recent_acceptance_rate']:.2%}")
+                #     print(f"Current best: {self.best_cost:.2f}")
+                #     print(f"Iterations without improvement: {iterations_without_improvement}")
+                #     print(f"Total improvements: {total_improvements}")
+
                 iterations += 1
 
                 # Early stopping if we reach a good solution
@@ -976,7 +995,6 @@ class SimulatedAnnealingScheduler:
             print(f"Error checking position validity: {str(e)}")
             return False
 
-
     def _update_tracking(self, current_cost: float, temperature: float, acceptance_prob: float):
         """Update tracking metrics during optimization"""
         try:
@@ -984,7 +1002,7 @@ class SimulatedAnnealingScheduler:
             self.temperature_history.append(float(temperature))
             self.acceptance_rates.append(float(acceptance_prob))
 
-            # Calculate diversity metric
+            # Calculate diversity metric if enough solutions
             if len(self.best_solutions) > 1:
                 diversity = self._calculate_diversity(
                     [sol[1] for sol in self.best_solutions[-10:]]
@@ -1034,7 +1052,7 @@ class SimulatedAnnealingScheduler:
 def main():
     try:
         # Choose dataset size (30, 60, 90, or 120)
-        dataset_size = "30"
+        dataset_size = "120"
         json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 
@@ -1047,13 +1065,13 @@ def main():
         scheduler = SimulatedAnnealingScheduler(dataset_path)
         results = scheduler.optimize()
 
-        print("\nResults:")
-        print(f"Makespan: {results['performance_metrics']['makespan']:.2f}")
-        print(f"Best Cost: {results['performance_metrics']['best_cost']:.2f}")
-        print(f"Execution Time: {results['performance_metrics']['execution_time']:.2f} seconds")
-        print(f"Precedence Violations: {results['performance_metrics']['violations']['precedence']}")
-        print(f"Resource Violations: {results['performance_metrics']['violations']['resource']}")
-        print(f"\nResults and visualizations saved in: {scheduler.output_dir}")
+        # print("\nResults:")
+        # print(f"Makespan: {results['performance_metrics']['makespan']:.2f}")
+        # print(f"Best Cost: {results['performance_metrics']['best_cost']:.2f}")
+        # print(f"Execution Time: {results['performance_metrics']['execution_time']:.2f} seconds")
+        # print(f"Precedence Violations: {results['performance_metrics']['violations']['precedence']}")
+        # print(f"Resource Violations: {results['performance_metrics']['violations']['resource']}")
+        # print(f"\nResults and visualizations saved in: {scheduler.output_dir}")
 
     except Exception as e:
         print(f"Error in main execution: {str(e)}")

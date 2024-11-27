@@ -10,7 +10,6 @@ from greedy import GreedyScheduler
 from optimal_solver import OptimalScheduler
 from simulated_annealing import SimulatedAnnealingScheduler
 
-
 def load_dataset_paths(base_path: str = 'processed_data') -> Dict[str, List[str]]:
     """Load available dataset paths organized by size"""
     dataset_paths = {}
