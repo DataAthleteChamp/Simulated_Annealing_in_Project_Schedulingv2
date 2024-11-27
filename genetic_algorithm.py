@@ -20,12 +20,15 @@ class GeneticScheduler:
 
     def _tune_parameters(self) -> Dict:
         """Tune GA parameters for better exploration and consistency"""
-        if self.num_tasks < 31:  # j30
+        if self.num_tasks < 39:  # j30
             population_size = 50
             generations = 150
-        elif self.num_tasks < 61:  # j60
+        elif self.num_tasks < 69:  # j60
             population_size = 100
-            generations = 300  # Increased from 200
+            generations = 300
+        elif self.num_tasks < 99:  # j90
+            population_size = 150
+            generations = 400
         else:  # j90/j120
             population_size = 150
             generations = 400
@@ -830,7 +833,7 @@ class GeneticScheduler:
 
 def main():
     try:
-        dataset_size = "60"
+        dataset_size = "30"
         json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 
