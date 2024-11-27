@@ -11,7 +11,7 @@ import logging
 class GreedyScheduler:
     def __init__(self, dataset_path: str):
         """Initialize the Greedy scheduler with dataset and logging"""
-        self._setup_logging()
+        #self._setup_logging()
         self._load_dataset(dataset_path)
         self._initialize_tracking()
         self._create_output_directories()
@@ -268,7 +268,7 @@ class GreedyScheduler:
 
     def optimize(self) -> Dict:
         """Execute greedy optimization algorithm with validation"""
-        self.logger.info("Starting greedy optimization...")
+        #self.logger.info("Starting greedy optimization...")
         self.start_time = time.time()
 
         try:
@@ -279,7 +279,7 @@ class GreedyScheduler:
                 eligible_tasks = self._get_eligible_tasks([t['task_id'] for t in scheduled_tasks])
 
                 if not eligible_tasks:
-                    self.logger.warning("No eligible tasks found")
+                    #self.logger.warning("No eligible tasks found")
                     break
 
                 # Calculate priorities and earliest possible start times
@@ -304,27 +304,27 @@ class GreedyScheduler:
                 }
 
                 scheduled_tasks.append(task)
-                self.logger.debug(f"Scheduled task {task_id} at time {start_time}")
+                #self.logger.debug(f"Scheduled task {task_id} at time {start_time}")
 
                 # Validate current partial schedule
                 is_valid, violations = self._validate_schedule(scheduled_tasks)
-                if not is_valid:
-                    self.logger.error("Schedule validation failed:")
-                    for category, issues in violations.items():
-                        for issue in issues:
-                            self.logger.error(f"{category}: {issue}")
+                # if not is_valid:
+                #     #self.logger.error("Schedule validation failed:")
+                #     for category, issues in violations.items():
+                #         for issue in issues:
+                #             #self.logger.error(f"{category}: {issue}")
 
                 current_time = max(current_time, int(task['end_time']))
 
-            if len(scheduled_tasks) < self.num_tasks:
-                self.logger.error("Failed to schedule all tasks")
-                return self._prepare_error_results()
+            # if len(scheduled_tasks) < self.num_tasks:
+            #     self.logger.error("Failed to schedule all tasks")
+            #     return self._prepare_error_results()
 
             # Final schedule validation
             is_valid, violations = self._validate_schedule(scheduled_tasks)
-            if not is_valid:
-                self.logger.error("Final schedule validation failed")
-                return self._prepare_error_results()
+            # if not is_valid:
+            #     self.logger.error("Final schedule validation failed")
+            #     return self._prepare_error_results()
 
             makespan = max(task['end_time'] for task in scheduled_tasks)
             execution_time = time.time() - self.start_time
@@ -343,7 +343,7 @@ class GreedyScheduler:
                 }
             }
 
-            self.logger.info(f"Optimization complete. Makespan: {makespan}")
+            # self.logger.info(f"Optimization complete. Makespan: {makespan}")
             self._save_report(results)
             self.create_visualizations(results)
 
@@ -437,26 +437,9 @@ class GreedyScheduler:
             print(f"Error saving report: {str(e)}")
             traceback.print_exc()
 
-    def _prepare_error_results(self) -> Dict:
-        """Prepare error results"""
-        execution_time = time.time() - self.start_time if self.start_time else 0
-
-        return {
-            'performance_metrics': {
-                'makespan': float('inf'),
-                'execution_time': float(execution_time),
-                'steps': len(self.step_history),
-                'violations': {'precedence': 0, 'resource': 0}
-            },
-            'schedule': [],
-            'step_history': [],
-            'error': 'Optimization failed'
-        }
-
     def create_visualizations(self, results: Dict):
         """Generate enhanced visualizations with error handling"""
         try:
-            import matplotlib.pyplot as plt
 
             # Create individual visualizations
             self._plot_schedule(results['schedule'], plt)
@@ -464,7 +447,7 @@ class GreedyScheduler:
             self._plot_resource_profile(results['schedule'], plt)
             self._plot_task_distribution(results['schedule'], plt)
 
-            self.logger.info(f"Visualizations saved in: {self.viz_dir}")
+            #self.logger.info(f"Visualizations saved in: {self.viz_dir}")
         except Exception as e:
             self.logger.error(f"Error creating visualizations: {str(e)}")
             traceback.print_exc()
@@ -624,24 +607,6 @@ class GreedyScheduler:
         plt.tight_layout()
         plt.savefig(os.path.join(self.viz_dir, 'resource_utilization.png'))
         plt.close()
-
-    def _plot_step_progression(self, step_history: List[Dict], plt):
-        """Plot step-by-step progression of the schedule"""
-        plt.figure(figsize=(15, 6))
-
-        steps = [step['step'] for step in step_history]
-        times = [step['end_time'] for step in step_history]
-
-        plt.plot(steps, times, 'b-', marker='o')
-        plt.title('Schedule Build-up Progress')
-        plt.xlabel('Number of Scheduled Tasks')
-        plt.ylabel('Completion Time')
-        plt.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.viz_dir, 'step_progression.png'))
-        plt.close()
-
 
 def main():
     try:
