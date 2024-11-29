@@ -228,7 +228,7 @@ class OptimalScheduler:
 
 def main():
     # Choose dataset size (30, 60, 90, or 120)
-    dataset_size = "90"
+    dataset_size = "30"
 
     # Get the first .json file from j30.sm/json directory
     json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
