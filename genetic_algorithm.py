@@ -38,7 +38,7 @@ class GeneticScheduler:
             critical_path_length = self._calculate_critical_path_length()
 
             # Base parameters based on problem size
-            if self.num_tasks < 31:  # j30
+            if self.num_tasks < 34:  # j30
                 base_params = {
                     'population_size': 100,
                     'generations': 200,
@@ -46,7 +46,7 @@ class GeneticScheduler:
                     'elite_ratio': 0.05,
                     'mutation_base': 0.04
                 }
-            elif self.num_tasks < 61:  # j60
+            elif self.num_tasks < 64:  # j60
                 base_params = {
                     'population_size': 200,
                     'generations': 300,
@@ -54,7 +54,7 @@ class GeneticScheduler:
                     'elite_ratio': 0.07,
                     'mutation_base': 0.05
                 }
-            elif self.num_tasks < 91:  # j90
+            elif self.num_tasks < 94:  # j90
                 base_params = {
                     'population_size': 300,
                     'generations': 400,
@@ -1019,7 +1019,7 @@ class GeneticScheduler:
 def main():
     try:
         # Configure dataset
-        dataset_size = "30"  # Choose from: 30, 60, 90, 120
+        dataset_size = "120"  # Choose from: 30, 60, 90, 120
         json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 

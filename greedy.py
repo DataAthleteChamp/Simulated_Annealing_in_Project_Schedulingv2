@@ -610,7 +610,7 @@ class GreedyScheduler:
 
 def main():
     try:
-        dataset_size = "60"
+        dataset_size = "120"
         json_dir = os.path.join('processed_data', f'j{dataset_size}.sm', 'json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 

@@ -24,15 +24,15 @@ class SimulatedAnnealingScheduler:
             critical_path_length = self._calculate_critical_path_length()
 
             # Simplified parameters based on problem size
-            if self.num_tasks < 31:  # j30
+            if self.num_tasks < 34:  # j30
                 base_temp = 1000
                 base_iterations = 2000
                 cooling_rate = 0.96
-            elif self.num_tasks < 61:  # j60
+            elif self.num_tasks < 64:  # j60
                 base_temp = 2000
                 base_iterations = 3000
                 cooling_rate = 0.96
-            elif self.num_tasks < 91:  # j90
+            elif self.num_tasks < 94:  # j90
                 base_temp = 3000
                 base_iterations = 3500
                 cooling_rate = 0.97

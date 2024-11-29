@@ -15,6 +15,7 @@ ga_results_*/
 greedy_results_*/
 greedy_scheduler.log
 genetic_results_*
+algorithm_comparison/
 
 # Ignore Python cache
 __pycache__/
