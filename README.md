@@ -31,9 +31,27 @@ git clone https://github.com/DataAthleteChamp/Simulated_Annealing_in_Project_Sch
 cd Simulated_Annealing_in_Project_Schedulingv2
 ```
 
-2. Install required packages:
+2. Create and activate virtual environment (recommended):
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Linux/MacOS
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Install required packages:
 ```bash
 pip install -r requirements.txt
+```
+### Required Dependencies
+```
+numpy>=1.24.3
+pandas>=2.0.2
+matplotlib>=3.7.1
+streamlit>=1.22.0
 ```
 
 ### Project Structure
@@ -55,32 +73,61 @@ pip install -r requirements.txt
 └── simulated_annealing.py # Main SA implementation
 ```
 
-## Usage
+## Running the Project
 
-### Running the Algorithms
+### 1. Data Preprocessing
+To convert raw RCPSP data into processable format, run:
+```bash
+python rcpsp_parser.py
+```
+This will process the raw data files from `data/` directory and save processed files in `processed_data/`.
+
+### 2. Running Optimization Algorithms
+You can run any of the four optimization algorithms. To test the implementation, it's sufficient to run just one of them:
 
 #### Simulated Annealing
 ```python
-from simulated_annealing import SimulatedAnnealing
-sa = SimulatedAnnealing('data/instance.sm')
-solution = sa.optimize()
+python simulated_annealing.py
 ```
 
-#### Using the APKA Algorithm
+#### Genetic Algorithm
 ```python
-from apka import APKA
-solver = APKA('data/instance.sm')
-result = solver.solve()
+python genetic_algorithm.py
 ```
 
-#### Visualizing Results
+#### Greedy Algorithm
 ```python
-from dataset_visualizer import DatasetVisualizer
-visualizer = DatasetVisualizer('data/instance.sm')
-visualizer.plot_schedule(solution)
+python greedy.py
 ```
+
+#### APKA Algorithm
+```python
+python apka.py
+```
+
+To change the dataset being used, modify the dataset path in the respective algorithm file:
+```python
+# Example in simulated_annealing.py
+DATASET_PATH = 'processed_data/j30.sm'  # Change this path to use different dataset
+```
+
+### 3. Running the Streamlit Application
+To launch the interactive visualization and comparison tool:
+```bash
+streamlit run apka.py
+```
+The application will be available at http://localhost:8501
 
 ## Implementation Details
+
+### Changing Dataset Size
+Available dataset sizes:
+- j30 (30 tasks)
+- j60 (60 tasks)
+- j90 (90 tasks)
+- j120 (120 tasks)
+
+To change the dataset size, modify the respective file paths in the algorithm implementations.
 
 ### Algorithm Features
 - Adaptive temperature control for Simulated Annealing
@@ -93,6 +140,25 @@ visualizer.plot_schedule(solution)
 - Support for standard RCPSP file formats
 - Dataset preprocessing and validation
 - Result analysis and comparison tools
+
+## Common Issues and Solutions
+
+1. Import errors:
+```bash
+# Add project root to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"  # Linux/MacOS
+set PYTHONPATH=%PYTHONPATH%;%cd%          # Windows
+```
+
+2. Memory issues with large datasets:
+- Reduce population size for genetic algorithm
+- Use smaller dataset chunks
+- Increase system swap space
+
+3. Streamlit issues:
+- Ensure all dependencies are installed correctly
+- Check if port 8501 is available
+- Try running with `--server.port` option if default port is occupied
 
 ## Contributing
 1. Fork the repository
