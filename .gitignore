@@ -7,8 +7,9 @@
 
 
 # Ignore result directories and temporary files
-data/
-processed_data/
+#data/
+#processed_data/
+algorithm_plots/
 sa_results_*/
 optimal_results_*/
 ga_results_*/
