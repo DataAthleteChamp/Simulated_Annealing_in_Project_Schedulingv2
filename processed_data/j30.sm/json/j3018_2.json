@@ -1,0 +1,488 @@
+{
+  "dataset_metadata": {
+    "num_jobs": 32,
+    "num_resources": 4,
+    "global_resources": {
+      "R1": 13,
+      "R2": 11,
+      "R3": 11,
+      "R4": 13
+    },
+    "file_name": "j3018_2.sm"
+  },
+  "tasks": [
+    {
+      "task_id": 0,
+      "processing_time": 0,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        1,
+        2,
+        3
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 1,
+      "processing_time": 9,
+      "resource_requirements": {
+        "R1": 2,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        5,
+        17,
+        20
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 2,
+      "processing_time": 3,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 2,
+        "R4": 0
+      },
+      "successors": [
+        4,
+        5
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 3,
+      "processing_time": 2,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 4
+      },
+      "successors": [
+        24
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 4,
+      "processing_time": 4,
+      "resource_requirements": {
+        "R1": 10,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        6,
+        8,
+        13
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 5,
+      "processing_time": 10,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 1,
+        "R4": 0
+      },
+      "successors": [
+        21
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 6,
+      "processing_time": 2,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 4,
+        "R4": 0
+      },
+      "successors": [
+        7,
+        9,
+        10
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 7,
+      "processing_time": 7,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 9,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        15,
+        29,
+        30
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 8,
+      "processing_time": 6,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 4,
+        "R4": 0
+      },
+      "successors": [
+        10,
+        30
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 9,
+      "processing_time": 9,
+      "resource_requirements": {
+        "R1": 8,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        11,
+        27
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 10,
+      "processing_time": 2,
+      "resource_requirements": {
+        "R1": 8,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        12,
+        22
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 11,
+      "processing_time": 5,
+      "resource_requirements": {
+        "R1": 3,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        26
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 12,
+      "processing_time": 6,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 5,
+        "R4": 0
+      },
+      "successors": [
+        15,
+        16,
+        17
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 13,
+      "processing_time": 5,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 3,
+        "R4": 0
+      },
+      "successors": [
+        14,
+        18
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 14,
+      "processing_time": 9,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 6,
+        "R4": 0
+      },
+      "successors": [
+        15,
+        19,
+        20
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 15,
+      "processing_time": 9,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 10,
+        "R4": 0
+      },
+      "successors": [
+        28
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 16,
+      "processing_time": 8,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 7,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        18,
+        20
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 17,
+      "processing_time": 5,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 4
+      },
+      "successors": [
+        18,
+        24
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 18,
+      "processing_time": 3,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 9,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        27
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 19,
+      "processing_time": 2,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 6,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        21,
+        23,
+        24
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 20,
+      "processing_time": 2,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 1,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        25
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 21,
+      "processing_time": 9,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 8
+      },
+      "successors": [
+        22
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 22,
+      "processing_time": 8,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 4
+      },
+      "successors": [
+        26
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 23,
+      "processing_time": 3,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 1,
+        "R4": 0
+      },
+      "successors": [
+        25,
+        30
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 24,
+      "processing_time": 6,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 9
+      },
+      "successors": [
+        25
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 25,
+      "processing_time": 5,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 6,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        26,
+        27
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 26,
+      "processing_time": 8,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 4,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [
+        28,
+        29
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 27,
+      "processing_time": 8,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 5
+      },
+      "successors": [
+        28,
+        29
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 28,
+      "processing_time": 4,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 1
+      },
+      "successors": [
+        31
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 29,
+      "processing_time": 3,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 2
+      },
+      "successors": [
+        31
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 30,
+      "processing_time": 3,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 2,
+        "R4": 0
+      },
+      "successors": [
+        31
+      ],
+      "priority": 1.0
+    },
+    {
+      "task_id": 31,
+      "processing_time": 0,
+      "resource_requirements": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      },
+      "successors": [],
+      "priority": 1.0
+    }
+  ]
+}
