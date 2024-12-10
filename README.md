@@ -66,7 +66,6 @@ streamlit>=1.22.0
 ├── dataset_visualizer.py    # Dataset visualization tools
 ├── genetic_algorithm.py     # Genetic algorithm implementation
 ├── greedy.py               # Greedy algorithm implementation
-├── greedy_scheduler.log    # Logging file for greedy scheduler
 ├── optimal_solver.py       # Optimal solver implementation
 ├── rcpsp_parser.py        # RCPSP dataset parser
 ├── requirements.txt       # Project dependencies
@@ -100,9 +99,9 @@ python genetic_algorithm.py
 python greedy.py
 ```
 
-#### APKA Algorithm
+#### Optimal Solver
 ```python
-python apka.py
+python optimal_solver.py
 ```
 
 To change the dataset being used, modify the dataset path in the respective algorithm file:
